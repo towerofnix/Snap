@@ -2915,7 +2915,8 @@ SpriteMorph.prototype.palette = function (category) {
 };
 
 SpriteMorph.prototype.freshPalette = function (category) {
-    var palette = new ScrollFrameMorph(null, null, this.sliderColor),
+    var myself = this,
+        palette = new ScrollFrameMorph(null, null, this.sliderColor),
         unit = SyntaxElementMorph.prototype.fontSize,
         x = 0,
         y = 5,
@@ -2928,9 +2929,9 @@ SpriteMorph.prototype.freshPalette = function (category) {
         makeButton;
 
     function sortBlocks(blocks) {
-        var blocksSorted = blocks.slice();
-        blocksSorted.sort((x, y) => x.localizedSpec() < y.localizedSpec() ? -1 : 1);
-        return blocksSorted;
+        var arrayToSort = blocks.map(block => [block, myself.labelOf(block.localizedSpec())]);
+        arrayToSort.sort((x, y) => x[1] < y[1] ? -1 : 1);
+        return arrayToSort.map(x => x[0]);
     }
 
     palette.owner = this;
@@ -3196,6 +3197,33 @@ SpriteMorph.prototype.freshPalette = function (category) {
 
 // SpriteMorph blocks searching
 
+SpriteMorph.prototype.labelOf = function (aBlockSpec) {
+    var words = (BlockMorph.prototype.parseSpec(aBlockSpec)),
+        filtered = words.filter(each =>
+            each.indexOf('%') !== 0 || each.length === 1
+        ),
+        slots = words.filter(each =>
+            each.length > 1 && each.indexOf('%') === 0
+        ).map(spec => this.menuOf(spec));
+    return filtered.join(' ') + ' ' + slots.join(' ');
+};
+
+SpriteMorph.prototype.menuOf = function (aSlotSpec) {
+    var info = BlockMorph.prototype.labelParts[aSlotSpec] || {},
+        menu = info.menu;
+    if (!menu) {return ''; }
+    if (isString(menu)) {
+        menu = InputSlotMorph.prototype[menu](true);
+    }
+    return Object.values(menu).map(entry => {
+        if (isNil(entry)) {return ''; }
+        if (entry instanceof Array) {
+            return localize(entry[0]);
+        }
+        return entry.toString();
+    }).join(' ');
+};
+
 SpriteMorph.prototype.blocksMatching = function (
     searchString,
     strictly,
@@ -3219,33 +3247,6 @@ SpriteMorph.prototype.blocksMatching = function (
         types = ['hat', 'command', 'reporter', 'predicate', 'ring'];
     }
     if (!varNames) {varNames = []; }
-
-    function labelOf(aBlockSpec) {
-        var words = (BlockMorph.prototype.parseSpec(aBlockSpec)),
-            filtered = words.filter(each =>
-                each.indexOf('%') !== 0 || each.length === 1
-            ),
-            slots = words.filter(each =>
-                each.length > 1 && each.indexOf('%') === 0
-            ).map(spec => menuOf(spec));
-        return filtered.join(' ') + ' ' + slots.join(' ');
-    }
-
-    function menuOf(aSlotSpec) {
-        var info = BlockMorph.prototype.labelParts[aSlotSpec] || {},
-            menu = info.menu;
-        if (!menu) {return ''; }
-        if (isString(menu)) {
-            menu = InputSlotMorph.prototype[menu](true);
-        }
-        return Object.values(menu).map(entry => {
-            if (isNil(entry)) {return ''; }
-            if (entry instanceof Array) {
-                return localize(entry[0]);
-            }
-            return entry.toString();
-        }).join(' ');
-    }
 
     function fillDigits(anInt, totalDigits, fillChar) {
         var ans = String(anInt);
