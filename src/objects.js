@@ -2927,6 +2927,12 @@ SpriteMorph.prototype.freshPalette = function (category) {
         searchButton,
         makeButton;
 
+    function sortBlocks(blocks) {
+        var blocksSorted = blocks.slice();
+        blocksSorted.sort((x, y) => x.localizedSpec() < y.localizedSpec() ? -1 : 1);
+        return blocksSorted;
+    }
+
     palette.owner = this;
     palette.padding = unit / 2;
     palette.color = this.paletteColor;
@@ -3120,7 +3126,7 @@ SpriteMorph.prototype.freshPalette = function (category) {
     if (stage) {
         y += unit * 1.6;
 
-        stage.globalBlocks.forEach(definition => {
+        sortBlocks(stage.globalBlocks).forEach(definition => {
             var block;
             if (definition.category === category ||
                     (category === 'variables'
@@ -3141,7 +3147,7 @@ SpriteMorph.prototype.freshPalette = function (category) {
     // local custom blocks:
 
     y += unit * 1.6;
-    this.customBlocks.forEach(definition => {
+    sortBlocks(this.customBlocks).forEach(definition => {
         var block;
         if (definition.category === category ||
                 (category === 'variables'
@@ -3162,7 +3168,7 @@ SpriteMorph.prototype.freshPalette = function (category) {
 
     // y += unit * 1.6;
     if (this.exemplar) {
-        this.inheritedBlocks(true).forEach(definition => {
+        sortBlocks(this.inheritedBlocks(true)).forEach(definition => {
             var block;
             if (definition.category === category ||
                     (category === 'variables'
